@@ -1,0 +1,88 @@
+package com.swt.util;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+//数据交换链接数据库
+public class BaseDao {
+		//sql连接参数
+		private static final String url = "jdbc:mysql://localhost:3306/leoco?useUnicode=true&characterEncoding=utf8";
+		private static final String userName = "root";
+		private static final String userPswd = "888888";
+		private static final String driverClassName = "com.mysql.jdbc.Driver";
+		
+		//注册驱动
+		static {
+			try {
+				Class.forName(driverClassName);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		//得到连接对象
+		public static Connection getConnection() {
+			Connection conn = null;
+			try {
+				conn = DriverManager.getConnection(url, userName, userPswd);
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return conn;
+		}
+		
+		//关闭连接
+		public static void closeAll(Connection conn, Statement stmt, ResultSet rs) {
+			try {
+				if (rs != null) {
+					rs.close();
+					rs = null;
+				}
+				if (stmt != null) {
+					stmt.close();
+					stmt = null;
+				}
+				if (conn != null) {
+					conn.close();
+					conn = null;
+				}
+			} catch (SQLException se) {
+				se.printStackTrace();
+			}
+		}
+	 
+		//关闭连接
+		public void closeAll(Connection conn, Statement stmt) {
+			//this.closeAll(conn, stmt, null);
+			closeAll(conn, stmt, null);
+		}
+		
+		//通用增删改方法
+		public int executeUpdate(String sql, Object[] params) {
+			//得到连接对象
+			Connection conn = null;
+			PreparedStatement stmt = null;
+			//影响的行数
+			int rows = 0;
+			try {
+				 conn = getConnection();
+				 stmt = conn.prepareStatement(sql);
+				 //得到参数个数
+				ParameterMetaData pmd =  stmt.getParameterMetaData();
+				//设置参数
+				for (int i = 0; i < pmd.getParameterCount(); i++) {
+					stmt.setObject(i+1, params[i]);
+				}
+				rows  = stmt.executeUpdate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} finally {
+				closeAll(conn, stmt);
+			}
+			return rows;
+		}
+
+}

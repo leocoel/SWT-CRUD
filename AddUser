@@ -1,0 +1,160 @@
+package com.swt.clien;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+
+import com.swt.util.BaseDao;
+import com.swt.entity.User;
+
+
+//添加数据
+public class AddUser {
+	//建立Shell主窗体
+	private static Shell shell;
+	//文本框1
+	private static Text text1;
+	//文本框2
+	private static Text text2;
+	//预编译
+	private static PreparedStatement ps;
+
+	public void adds() {
+
+		Display disp = Display.getDefault();
+		shell = new Shell(disp);
+		shell.setText("添加数据窗体");
+		shell.setBounds(350, 200, 500, 400);
+		  //创建文本框
+		  Label label = new Label(shell, SWT.NONE);
+		  label.setText("添加数据窗口");
+		  label.setBounds(200, 10, 150, 30);
+		  Color color = new Color(Display.getCurrent(), 0, 0, 200);
+		  label.setForeground(color);
+		   
+		  
+		  Label label1 = new Label(shell, SWT.NONE);
+		  label1.setText("用户名：");
+		  label1.setBounds(100, 50, 50, 30);
+		  
+		  text1 = new Text(shell, SWT.NONE);
+		  text1.setBounds(160, 50, 200, 24);
+		  
+		  Label label2 = new Label(shell, SWT.NONE);
+		  label2.setText("密 码：");
+		  label2.setBounds(100, 100, 50, 30);
+		  
+		  text2 = new Text(shell, SWT.NONE);
+		  text2.setBounds(160, 100, 200, 24);
+		  //创建按钮
+		  Button button1 = new Button(shell, SWT.NONE);
+		  button1.setText("保存");
+		  button1.setBounds(130, 300, 100, 30);
+		  
+		  //执行保存按钮方法
+		  button1.addSelectionListener(new add());
+		  
+		  Button button2 = new Button(shell, SWT.NONE);
+		  button2.setText("取消");
+		  button2.setBounds(240, 300, 100, 30);
+		  
+		  //执行取消按钮方法
+		  button2.addSelectionListener(new exits());		  
+		  // 显示窗体
+		  shell.open();
+		  while (!shell.isDisposed()) {
+		   if (!disp.readAndDispatch()) {
+			   disp.sleep();
+		   		}
+		  }
+		  //释放display对象资源
+		  disp.dispose();
+		
+	}
+	
+	// 添加方法
+	public static class add extends SelectionAdapter{
+		public void widgetSelected(SelectionEvent e){
+			User user = new User();
+			user.setuName(text1.getText());
+			user.setuPass(text2.getText());
+			
+			try {
+				//往用户表添加数据
+				if(getButtonValue()){
+					Connection con = BaseDao.getConnection();
+					ps = con.prepareStatement("insert into user(uname,upass) values(?,?)");
+					ps.setString(1, user.getuName());
+					ps.setString(2, user.getuPass());
+					ps.execute();
+					MessageDialog.openWarning(Display.getCurrent().getActiveShell(),"保存对话框","保存数据成功！"); 
+					
+					shell.dispose();
+					//调用查询方法
+					MainSql.getShells();
+					BaseDao.closeAll(con, ps, null);
+				}
+				
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+				MessageDialog.openWarning(Display.getCurrent().getActiveShell(),"保存对话框","保存数据失败！");
+			}
+			
+			
+		}
+	}
+	
+	
+	//取消
+	public static class exits extends SelectionAdapter{
+		public void widgetSelected(SelectionEvent e){
+			shell.dispose();
+			//调用查询方法
+			MainSql.getShells();
+		}
+	}
+
+	
+	//文本框值判断
+	private static boolean getButtonValue(){		
+		String name = text1.getText();
+		String pass = text2.getText();
+		boolean result = true;
+		
+		//判断用户名是否为空
+		if(name.length() == 0 || name.equals("")){
+			int style = SWT.APPLICATION_MODAL | SWT.YES;  
+			MessageBox messageBox = new MessageBox(shell, style);  
+			messageBox.setText("对话框");  
+			messageBox.setMessage("用户名不能为空!");  
+			messageBox.open();
+			return false;
+		}
+		//判断密码是否为空
+		if(pass.length() == 0 || pass.equals("")){
+			int style = SWT.APPLICATION_MODAL | SWT.YES;  
+			MessageBox messageBox = new MessageBox(shell, style);  
+			messageBox.setText("对话框");  
+			messageBox.setMessage("密码不能为空!");  
+			messageBox.open();
+			return false;
+		}
+		
+		return result;
+		
+	}
+	
+	
+}

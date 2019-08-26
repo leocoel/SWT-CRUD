@@ -1,0 +1,163 @@
+package com.swt.clien;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+import com.swt.util.BaseDao;
+import com.swt.entity.User;
+
+
+// 修改数据
+public class UpdateUser {
+	//Shell主窗体
+	private static Shell shell;
+	//user对象
+	private static User users;
+	//文本框1
+	private static Text text1;
+	//文本框2
+	private static Text text2;
+	//用户id
+	private static int uId;
+	//预编译
+	private static PreparedStatement ps;
+	
+	public void updates(User user) {
+		//创建Display对象
+		Display display = Display.getDefault();
+		shell = new Shell(display);
+		shell.setText("修改数据窗体");
+		shell.setBounds(350, 200, 500, 400);
+
+		  uId=user.getuId();
+		  //创建文本框
+		  Label label = new Label(shell, SWT.NONE);
+		  label.setText("修改数据窗口");
+		  label.setBounds(200, 10, 150, 30);
+		  Color color = new Color(Display.getCurrent(), 0, 0, 200);
+		  label.setForeground(color);
+		   
+		  Label label1 = new Label(shell, SWT.NONE);
+		  label1.setText("用户名：");
+		  label1.setBounds(100, 50, 50, 30);
+		  
+		  text1 = new Text(shell, SWT.NONE);
+		  text1.setText(user.getuName());
+		  text1.setBounds(160, 50, 200, 24);
+		  
+		  Label label2 = new Label(shell, SWT.NONE);
+		  label2.setText("密    码：");
+		  label2.setBounds(100, 100, 50, 30);
+		  
+		  text2 = new Text(shell, SWT.NONE);
+		  text2.setText(user.getuPass());
+		  text2.setBounds(160, 100, 200, 24);
+		  
+		  //创建按钮
+		  Button button1 = new Button(shell, SWT.NONE);
+		  button1.setText("保存");
+		  button1.setBounds(130, 300, 100, 30);
+		  
+		  //执行保存方法
+		  button1.addSelectionListener(new updated());
+		  
+		  Button button2 = new Button(shell, SWT.NONE);
+		  button2.setText("取消");
+		  button2.setBounds(240, 300, 100, 30);
+		  //执行取消方法
+		  button2.addSelectionListener(new exits());
+		  //显示窗体
+		  shell.open();
+		  //效验窗体是否关闭
+		  while (!shell.isDisposed()) {
+			//效验Display线程状态是否忙
+		   if (!display.readAndDispatch()) {
+			 //display线程休眠
+			   display.sleep();
+		   		}
+		  	}
+		  //注销display对象资源
+		  display.dispose();
+	}
+	
+	//修改方法
+	public static class updated extends SelectionAdapter{
+		public void widgetSelected(SelectionEvent e){
+			
+			users = new User();
+			users.setuName(text1.getText());
+			users.setuPass(text2.getText());
+			
+			try {
+				//往数据库中插入数据
+				if(getButtonValue()){
+					Connection con = BaseDao.getConnection();
+					ps = con.prepareStatement("update user set uname=?,upass=? where uid=?");
+					ps.setString(1, users.getuName());
+					ps.setString(2, users.getuPass());
+					ps.setInt(3, uId);
+					ps.executeUpdate();
+					MessageDialog.openWarning(Display.getCurrent().getActiveShell(),"修改对话框","修改数据成功！");
+					
+					shell.dispose();
+					MainSql.getShells();
+					BaseDao.closeAll(con, ps, null);
+				}
+				
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+				MessageDialog.openWarning(Display.getCurrent().getActiveShell(),"修改对话框","修改数据失败！");
+			}
+			
+			
+		}
+	}
+	
+	
+	//取消
+	public static class exits extends SelectionAdapter{
+		public void widgetSelected(SelectionEvent e){
+			shell.dispose();
+			//调用查询方法
+			MainSql.getShells();
+		}
+	}
+
+	
+	//文本框判断方法
+	private static boolean getButtonValue(){
+		
+		String name = text1.getText();
+		String pass = text2.getText();
+		boolean result = true;
+		if(name.length() == 0 || name.equals("")){
+			int style = SWT.APPLICATION_MODAL | SWT.YES;  
+			MessageBox messageBox = new MessageBox(shell, style);  
+			messageBox.setText("对话框");  
+			messageBox.setMessage("用户名不能为空!");  
+			messageBox.open();
+			return false;
+		}
+		if(pass.length() == 0 || pass.equals("")){
+			int style = SWT.APPLICATION_MODAL | SWT.YES;  
+			MessageBox messageBox = new MessageBox(shell, style);  
+			messageBox.setText("对话框");  
+			messageBox.setMessage("密码不能为空!");  
+			messageBox.open();
+			return false;
+		}
+		return result;
+		
+	}
+}
